@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Image Classifier</title>
+</head>
+<body>
+  <h2>Upload an Image</h2>
+
+  <input type="file" id="upload">
+  <button onclick="uploadImage()">Upload</button>
+
+  <p id="result"></p>
+
+  <script>
+    function uploadImage() {
+      const fileInput = document.getElementById('upload');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        document.getElementById('result').innerText = 'Please select an image.';
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      fetch('http://localhost:5000/predict', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        let result;
+        if(data.class == 0){
+          result = "Buildings"
+        }else if(data.class == 1){
+          result = "Forests"
+        }else if(data.class == 2){
+          result = "Moutains"
+        }else if(data.class == 3){
+          result = "Glacier"
+        }else if(data.class == 4){
+          result = "Street"
+        }else if(data.class == 5){
+          result = "Sea"
+        }
+        document.getElementById('result').innerText = 'Predicted Class: ' + result;
+      })
+      .catch(error => {
+        document.getElementById('result').innerText = 'Error: ' + error;
+      });
+    }
+  </script>
+</body>
+</html>
