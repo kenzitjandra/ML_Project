@@ -60,7 +60,7 @@
 
       <div id="results-content" class="results-content hidden">
         <div class="result-section">
-          <h3>Main Category</h3>
+          <h3>Category</h3>
             <div style="display: flex; align-items: center; gap: 12px;">
               <span id="category-badge" class="category-badge"></span>
               <span id="confidence-score" class="confidence-score"></span>
@@ -134,15 +134,6 @@
       };
       reader.readAsDataURL(file);
     }
-    
-    resetBtn.addEventListener('click', () => {
-      fileInput.value = '';
-      imagePreview.src = '';
-      previewSection.classList.add('hidden');
-      uploadArea.classList.remove('hidden');
-      resultText.innerText = '';
-      selectedFile = null;
-    });
 
     function showError(message) {
       errorMessage.textContent = message;
@@ -192,13 +183,14 @@
         setAnalyzing(true);
         showResultsLoading();
 
-        fetch('http://localhost:5000/predict', {
+        fetch('http://127.0.0.1:5000/predict', {
           method: 'POST',
           body: formData
         })
         .then(response => response.json())
         .then(data => {
           setAnalyzing(false);
+          hideResults();
           if (data.error) {
             showError(data.error);
             return;
@@ -228,6 +220,16 @@
           showError("Error: " + error.message);
         });
       }
+
+    resetBtn.addEventListener('click', () => {
+      fileInput.value = '';
+      imagePreview.src = '';
+      previewSection.classList.add('hidden');
+      uploadArea.classList.remove('hidden');
+      hideError();
+      hideResults();
+      selectedFile = null;
+    });
 
     // function uploadImage() {
     //   const fileInput = document.getElementById('upload');
