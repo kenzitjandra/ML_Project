@@ -1,56 +1,272 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="stylesheet" href="style.css">
   <meta charset="UTF-8">
   <title>Image Classifier</title>
 </head>
 <body>
-  <h2>Upload an Image</h2>
+  <div class="header">
+    <h1> AI Image Classifier</h1>
+    
+    <p>Upload any image and let AI identify what's in it</p>
 
-  <input type="file" id="upload">
+  </div>
+
+  <div class="main-content">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Upload an Image</h2>
+        <p class="card-description">Drag and drop an image or click to browse</p>
+      </div>
+      <div id="upload-area" class="upload-zone">
+        <div class="upload-icon">📷</div>
+          <p class="upload-text">Drop your image here, or click to browse</p>
+          <input type="file" id="file-input" style="display: none;">
+      </div>
+
+      <div id="preview-section" class="preview-container hidden">
+        <img id="image-preview" class="image-preview" alt="Preview">
+          <div class="button-group">
+            <button id="analyze-btn" class="btn btn-primary">
+              <span id="analyze-text">🔍 Classify Image</span>
+              <div id="analyze-spinner" class="spinner hidden"></div>
+            </button>
+            <button id="reset-btn" class="btn btn-secondary">Reset</button>
+          </div>
+      </div>
+
+      <div id="error-message" class="error-message hidden"></div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          Classification Results
+        </h2>
+        <p class="card-description">AI analysis of your uploaded image</p>
+      </div>
+
+      <div id="results-empty" class="results-empty">
+        <div style="font-size: 48px; margin-bottom: 16px;">📷</div>
+        <p>Upload and analyze an image to see results</p>
+      </div>
+
+      <div id="results-loading" class="results-loading hidden">
+        <div class="spinner" style="margin: 0 auto 16px; border-color: #667eea; border-top-color: transparent;"></div>
+        <p>Analyzing your image...</p>
+      </div>
+
+      <div id="results-content" class="results-content hidden">
+        <div class="result-section">
+          <h3>Main Category</h3>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span id="category-badge" class="category-badge"></span>
+              <span id="confidence-score" class="confidence-score"></span>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- <input type="file" id="upload">
   <button onclick="uploadImage()">Upload</button>
 
-  <p id="result"></p>
+  <p id="result"></p> -->
 
   <script>
-    function uploadImage() {
-      const fileInput = document.getElementById('upload');
-      const file = fileInput.files[0];
+    const uploadArea = document.getElementById('upload-area');
+    const fileInput = document.getElementById('file-input');
+    const imagePreview = document.getElementById('image-preview');
+    const previewSection = document.getElementById('preview-section');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const resultText = document.getElementById('result');
+    const spinner = document.getElementById('analyze-spinner');
+    const analyzeText = document.getElementById('analyze-text');
+    const analyzeSpinner = document.getElementById('analyze-spinner');
+    const errorMessage = document.getElementById('error-message');
+    const resultsEmpty = document.getElementById('results-empty');
+    const resultsLoading = document.getElementById('results-loading');
+    const resultsContent = document.getElementById('results-content');
 
-      if (!file) {
-        document.getElementById('result').innerText = 'Please select an image.';
+    let selectedFile = null;
+
+    uploadArea.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+    ['dragover', 'dragenter'].forEach(event =>
+      uploadArea.addEventListener(event, e => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+      })
+    );
+
+    ['dragleave', 'drop'].forEach(event =>
+      uploadArea.addEventListener(event, e => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+      })
+    );
+
+    uploadArea.addEventListener('drop', e => {
+      const file = e.dataTransfer.files[0];
+      handleFile(file);
+    });
+
+    function handleFile(file) {
+      if (!file || !file.type.startsWith('image/')){
+        showError('Please select a valid image file');
         return;
       }
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      fetch('http://localhost:5000/predict', {
-        method: 'POST',
-        body: formData
-      })
-      .then(response => response.json())
-      .then(data => {
-        let result;
-        if(data.class == 0){
-          result = "Buildings"
-        }else if(data.class == 1){
-          result = "Forests"
-        }else if(data.class == 2){
-          result = "Moutains"
-        }else if(data.class == 3){
-          result = "Glacier"
-        }else if(data.class == 4){
-          result = "Street"
-        }else if(data.class == 5){
-          result = "Sea"
-        }
-        document.getElementById('result').innerText = 'Predicted Class: ' + result;
-      })
-      .catch(error => {
-        document.getElementById('result').innerText = 'Error: ' + error;
-      });
+      selectedFile = file;
+      showPreview(file);
+      hideError();
     }
+
+    function showPreview(file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        imagePreview.src = e.target.result;
+        uploadArea.classList.add('hidden');
+        previewSection.classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    resetBtn.addEventListener('click', () => {
+      fileInput.value = '';
+      imagePreview.src = '';
+      previewSection.classList.add('hidden');
+      uploadArea.classList.remove('hidden');
+      resultText.innerText = '';
+      selectedFile = null;
+    });
+
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorMessage.classList.remove('hidden');
+    }
+
+    function hideError() {
+      errorMessage.classList.add('hidden');
+    }
+
+    analyzeBtn.addEventListener('click', analyzeImage);
+
+    function showResultsLoading() {
+      resultsEmpty.classList.add('hidden');
+      resultsContent.classList.add('hidden');
+      resultsLoading.classList.remove('hidden');
+    }
+
+    function hideResults() {
+      resultsLoading.classList.add('hidden');
+      resultsContent.classList.add('hidden');
+      resultsEmpty.classList.remove('hidden');
+    }
+
+
+    function setAnalyzing(isAnalyzing) {
+      if (isAnalyzing) {
+        analyzeText.textContent = 'Analyzing...';
+        analyzeSpinner.classList.remove('hidden');
+        analyzeBtn.disabled = true;
+      } else {
+        analyzeText.textContent = '🔍 Classify Image';
+        analyzeSpinner.classList.add('hidden');
+        analyzeBtn.disabled = false;
+      }
+    }
+
+    function analyzeImage() {
+        if (!selectedFile) {
+          showError('Please select an image to classify.');
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        setAnalyzing(true);
+        showResultsLoading();
+
+        fetch('http://localhost:5000/predict', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          setAnalyzing(false);
+          if (data.error) {
+            showError(data.error);
+            return;
+          }
+
+          const classMap = {
+            0: "Buildings",
+            1: "Forests",
+            2: "Mountains",
+            3: "Glacier",
+            4: "Street",
+            5: "Sea"
+          };
+
+          const label = classMap[data.class] || "Unknown";
+          document.getElementById('results-empty').classList.add('hidden');
+          document.getElementById('results-content').classList.remove('hidden');
+          document.getElementById('category-badge').textContent = label;
+
+          if (data.confidence) {
+            document.getElementById('confidence-score').textContent =
+              `Confidence: ${(data.confidence * 100).toFixed(2)}%`;
+          }
+        })
+        .catch(error => {
+          setAnalyzing(false);
+          showError("Error: " + error.message);
+        });
+      }
+
+    // function uploadImage() {
+    //   const fileInput = document.getElementById('upload');
+    //   const file = fileInput.files[0];
+
+    //   if (!file) {
+    //     document.getElementById('result').innerText = 'Please select an image.';
+    //     return;
+    //   }
+
+    //   const formData = new FormData();
+    //   formData.append('file', file);
+
+    //   fetch('http://localhost:5000/predict', {
+    //     method: 'POST',
+    //     body: formData
+    //   })
+    //   .then(response => response.json())
+    //   .then(data => {
+    //     let result;
+    //     if(data.class == 0){
+    //       result = "Buildings"
+    //     }else if(data.class == 1){
+    //       result = "Forests"
+    //     }else if(data.class == 2){
+    //       result = "Moutains"
+    //     }else if(data.class == 3){
+    //       result = "Glacier"
+    //     }else if(data.class == 4){
+    //       result = "Street"
+    //     }else if(data.class == 5){
+    //       result = "Sea"
+    //     }
+    //     document.getElementById('result').innerText = 'Predicted Class: ' + result;
+    //   })
+    //   .catch(error => {
+    //     document.getElementById('result').innerText = 'Error: ' + error;
+    //   });
+    // }
   </script>
 </body>
 </html>
