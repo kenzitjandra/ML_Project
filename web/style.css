@@ -227,3 +227,14 @@ body{
     margin-top: 16px;
     font-size: 0.875rem;
 }
+
+.top-predictions {
+  margin-top: 10px;
+  padding-left: 20px;
+  color: #444;
+  font-size: 14px;
+}
+
+.top-predictions li {
+  margin-bottom: 4px;
+}

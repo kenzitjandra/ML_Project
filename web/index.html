@@ -67,6 +67,10 @@
             </div>
         </div>
       </div>
+      <div class="result-section">
+        <h3>Top 3 Predictions</h3>
+        <ul id="top-predictions-list" class="top-predictions"></ul>
+      </div>
     </div>
   </div>
 
@@ -205,15 +209,27 @@
             5: "Sea"
           };
 
-          const label = classMap[data.class] || "Unknown";
+          const predictions = data.top_predictions;
+
           document.getElementById('results-empty').classList.add('hidden');
           document.getElementById('results-content').classList.remove('hidden');
-          document.getElementById('category-badge').textContent = label;
 
-          if (data.confidence) {
-            document.getElementById('confidence-score').textContent =
-              `Confidence: ${(data.confidence * 100).toFixed(2)}%`;
-          }
+          // Show top-1 prominently
+          document.getElementById('category-badge').textContent = predictions[0].label;
+          document.getElementById('confidence-score').textContent =
+            `Confidence: ${predictions[0].confidence}%`;
+
+          // Populate the list
+          const list = document.getElementById('top-predictions-list');
+          list.innerHTML = ''; // Clear previous entries
+
+          predictions.forEach(p => {
+            const li = document.createElement('li');
+            li.textContent = `${p.label}: ${p.confidence}%`;
+            list.appendChild(li);
+          });
+
+
         })
         .catch(error => {
           setAnalyzing(false);
